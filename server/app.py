@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, jsonify
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 
@@ -35,7 +35,11 @@ class Plants(Resource):
         db.session.add(new_plant)
         db.session.commit()
 
-        return make_response(new_plant.to_dict(), 201)
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        return make_response(jsonify(new_plant.to_dict()), 201, headers)
 
 
 api.add_resource(Plants, '/plants')
@@ -43,10 +47,39 @@ api.add_resource(Plants, '/plants')
 
 class PlantByID(Resource):
 
+
+       
     def get(self, id):
         plant = Plant.query.filter_by(id=id).first().to_dict()
         return make_response(jsonify(plant), 200)
 
+    def patch(self, id):
+        data = request.get_json()
+
+        plant = Plant.query.filter_by(id=id).first()
+
+        for attr in data:
+            setattr(plant, attr, data[attr])
+
+        db.session.add(plant)
+        db.session.commit()
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        return make_response(plant.to_dict(), 200, headers)
+
+    def delete(self, id):
+        plant = Plant.query.filter_by(id=id).first()
+        db.session.delete(plant)
+        db.session.commit()
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        return make_response(jsonify({}), 204, headers)
 
 api.add_resource(PlantByID, '/plants/<int:id>')
 
